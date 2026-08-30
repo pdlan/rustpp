@@ -1,0 +1,153 @@
+use std::io::Read;
+use std::io::Write;
+use std::net::SocketAddr;
+use std::net::TcpListener;
+use std::net::TcpStream;
+
+value class Fd {
+    stream: TcpStream,
+
+    constructor(stream: TcpStream) {
+        new { stream }
+    }
+
+    pub fn read(&mut self, bytes: &mut [u8]) -> std::io::Result<usize> {
+        self.stream.read(bytes)
+    }
+
+    pub fn write_all(&mut self, bytes: &[u8]) -> std::io::Result<()> {
+        self.stream.write_all(bytes)
+    }
+}
+
+class Connection {
+    fd: Fd,
+
+    constructor(fd: Fd) {
+        new { fd }
+        init {}
+    }
+
+    pub fn read_request(&mut self) -> std::io::Result<String> {
+        let mut bytes = [0_u8; 4096];
+        let length = self.fd.read(&mut bytes)?;
+        Ok(String::from_utf8_lossy(&bytes[..length]).into_owned())
+    }
+
+    pub fn respond(&mut self, status: &str, body: &str) -> std::io::Result<()> {
+        let response = format!(
+            "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len(),
+        );
+        self.fd.write_all(response.as_bytes())
+    }
+
+    destructor {
+        deinit {}
+    }
+}
+
+abstract class BaseServer {
+    constructor() {
+        new {}
+        init {}
+    }
+
+    pub virtual fn protocol(&self) -> &'static str;
+    pub virtual fn handle(&mut self, _connection: &mut Connection) -> std::io::Result<()>;
+
+    destructor {
+        deinit {}
+    }
+}
+
+class TcpServer : public BaseServer {
+    listener: TcpListener,
+
+    constructor(address: &str) {
+        new {
+            base BaseServer(),
+            listener: TcpListener::bind(address).expect("bind HTTP listener"),
+        }
+        init {}
+    }
+
+    pub override fn protocol(&self) -> &'static str { "tcp" }
+
+    pub override fn handle(&mut self, connection: &mut Connection) -> std::io::Result<()> {
+        let _ = connection.read_request()?;
+        connection.respond("501 Not Implemented", "plain TCP server")
+    }
+
+    pub fn local_address(&self) -> std::io::Result<SocketAddr> {
+        self.listener.local_addr()
+    }
+
+    pub fn serve_once(&mut self) -> std::io::Result<()> {
+        let (stream, _) = self.listener.accept()?;
+        let mut connection: Box<Connection> = Connection::construct_box(Fd::new(stream));
+        self.handle(&mut *connection)?;
+        Ok(())
+    }
+
+    destructor {
+        deinit {}
+    }
+}
+
+class HttpServer : public TcpServer {
+    served: usize,
+
+    constructor(address: &str) {
+        new {
+            base TcpServer(address),
+            served: 0,
+        }
+        init {}
+    }
+
+    pub override fn protocol(&self) -> &'static str { "http/1.1" }
+
+    pub override fn handle(&mut self, connection: &mut Connection) -> std::io::Result<()> {
+        let request = connection.read_request()?;
+        let request_line = request.lines().next().unwrap_or("");
+        self.served += 1;
+        let served = self.served;
+        let body = format!(
+            "Rust++ {} handled {} (request #{})\n",
+            self.protocol(),
+            request_line,
+            served,
+        );
+        connection.respond("200 OK", &body)
+    }
+
+    destructor {
+        deinit {
+            assert_eq!(self.served, 1);
+        }
+    }
+}
+
+fn main() -> std::io::Result<()> {
+    let mut server: Box<TcpServer> = construct Box<HttpServer>("127.0.0.1:0");
+    assert_eq!(server.protocol(), "http/1.1");
+    let address = server.local_address()?;
+
+    let client = std::thread::spawn(move || -> std::io::Result<String> {
+        let mut stream = TcpStream::connect(address)?;
+        stream.write_all(b"GET /demo HTTP/1.1\r\nHost: localhost\r\n\r\n")?;
+        let mut response = String::new();
+        stream.read_to_string(&mut response)?;
+        Ok(response)
+    });
+
+    server.serve_once()?;
+    drop(server);
+
+    let response = client.join().expect("HTTP client thread")?;
+    assert!(response.starts_with("HTTP/1.1 200 OK\r\n"));
+    assert!(response.contains("Rust++ http/1.1 handled GET /demo HTTP/1.1"));
+    println!("{response}");
+    Ok(())
+}

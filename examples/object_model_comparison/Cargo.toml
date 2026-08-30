@@ -1,0 +1,24 @@
+[package]
+name = "object-model-comparison"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[build-dependencies]
+rustpp_compiler = { path = "../../crates/rustpp_compiler" }
+
+[[bin]]
+name = "rustpp-widgets"
+path = "src/bin/rustpp.rs"
+
+[[bin]]
+name = "rust-query-widgets"
+path = "src/bin/rust.rs"
+
+[[bin]]
+name = "rust-enum-widgets"
+path = "src/bin/rust_enum.rs"
+
+[[bin]]
+name = "rust-unified-widgets"
+path = "src/bin/rust_unified.rs"

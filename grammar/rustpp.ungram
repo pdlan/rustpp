@@ -1,0 +1,32 @@
+SourceFile = Item*
+Item = ValueClass | ClassDef | RustItem
+RustItem = 'fn' Token*
+
+ValueClass = 'value' 'class' Name GenericParamList? '{' ClassMember* '}'
+GenericParamList = '<' Token* '>'
+ClassDef = ClassModifier? 'class' Name BaseList? '{' ClassMember* '}'
+ClassModifier = 'abstract' | 'final'
+BaseList = ':' BaseSpec* 
+BaseSpec = BaseVisibility? Name ','?
+BaseVisibility = 'public' | 'protected' | 'private'
+ClassMember = FieldDef | ConstructorDef | DestructorDef | MethodDef
+FieldDef = Visibility? Name ':' TypeRef ','?
+Visibility = 'pub'
+ConstructorDef = 'constructor' ParamList '{' NewExpr InitBlock? '}'
+DestructorDef = 'destructor' '{' DeinitBlock? DropBlock? '}'
+ParamList = '(' Param* ')'
+Param = Name ':' TypeRef ','?
+NewExpr = 'new' '{' (NewField | BaseInit)* '}'
+NewField = Name (':' Expr)? ','?
+BaseInit = 'base' Name '(' Expr? ')' ','?
+
+Name = 'ident'
+TypeRef = Token*
+Expr = Token*
+InitBlock = 'init' Block
+DeinitBlock = 'deinit' Block
+DropBlock = 'drop' Block
+Block = '{' Token* '}'
+MethodDef = MethodModifier* MethodSignature (Block | ';')
+MethodModifier = 'pub' | 'virtual' | 'override' | 'final'
+MethodSignature = 'fn' Token*

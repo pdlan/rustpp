@@ -1,0 +1,10 @@
+[package]
+name = "value-class-demo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = "build.rs"
+
+[build-dependencies]
+rustpp_compiler = { path = "../../crates/rustpp_compiler" }
+
