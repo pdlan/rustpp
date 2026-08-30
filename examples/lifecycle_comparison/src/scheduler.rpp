@@ -1,0 +1,51 @@
+use std::sync::Arc;
+use std::sync::Mutex;
+
+abstract class Runnable {
+    constructor() { new {} }
+    pub virtual fn run(&mut self) -> usize;
+}
+
+class Cancellable {
+    cancelled: bool,
+    constructor() { new { cancelled: false } }
+    pub virtual fn cancel(&mut self) { self.cancelled = true; }
+    pub fn is_cancelled(&self) -> bool { self.cancelled }
+}
+
+class Task : public Runnable, public Cancellable {
+    intrusive_members: Arc<Mutex<Vec<usize>>>,
+    link: Option<usize>,
+    runs: usize,
+
+    constructor(input_members: Arc<Mutex<Vec<usize>>>) {
+        new { base Runnable(), base Cancellable(), intrusive_members: input_members,
+              link: None, runs: 0 }
+        init {
+            let address = self as *const _ as usize;
+            self.intrusive_members.lock().unwrap().push(address);
+            self.link = Some(address);
+        }
+    }
+
+    pub override fn run(&mut self) -> usize { self.runs += 1; self.runs }
+
+    destructor {
+        deinit {
+            let address = self.link.take().unwrap();
+            self.intrusive_members.lock().unwrap().retain(|item| *item != address);
+        }
+    }
+}
+
+fn main() {
+    let members = Arc::new(Mutex::new(Vec::new()));
+    let mut runnable: Box<Runnable> = construct Box<Task>(members.clone());
+    assert_eq!(runnable.run(), 1);
+    let cancellable = (&mut *runnable as? Cancellable).unwrap();
+    cancellable.cancel();
+    assert!(cancellable.is_cancelled());
+    drop(runnable);
+    assert!(members.lock().unwrap().is_empty());
+    println!("scheduler: linked, cross-cast, unlinked");
+}

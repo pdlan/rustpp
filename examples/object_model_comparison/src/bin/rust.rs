@@ -76,8 +76,7 @@ impl Accessible for ToggleButton {
 
 impl Widget for ToggleButton {
     fn paint(&self) -> String {
-        let _id = self.id;
-        format!("[ {} ]", Accessible::describe(self))
+        format!("[ #{} {} ]", self.id, Accessible::describe(self))
     }
 
     fn complete_address(&self) -> usize {
@@ -104,7 +103,7 @@ fn main() {
     // Trait-object coercion provides the initial upcast.
     let mut widget: Box<dyn Widget> = concrete;
     assert_eq!(widget.complete_address(), original_address);
-    assert_eq!(widget.paint(), "[ Dark mode: unchecked ]");
+    assert_eq!(widget.paint(), "[ #7 Dark mode: unchecked ]");
 
     // The cross-casts are handwritten query methods rather than a general
     // operation supported by the object model.

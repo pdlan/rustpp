@@ -1,0 +1,33 @@
+[package]
+name = "lifecycle-comparison"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[build-dependencies]
+rustpp_compiler = { path = "../../crates/rustpp_compiler" }
+
+[[bin]]
+name = "rustpp-reactor"
+path = "src/bin/rustpp_reactor.rs"
+[[bin]]
+name = "rust-reactor"
+path = "src/bin/rust_reactor.rs"
+[[bin]]
+name = "rustpp-window"
+path = "src/bin/rustpp_window.rs"
+[[bin]]
+name = "rust-window"
+path = "src/bin/rust_window.rs"
+[[bin]]
+name = "rustpp-scheduler"
+path = "src/bin/rustpp_scheduler.rs"
+[[bin]]
+name = "rust-scheduler"
+path = "src/bin/rust_scheduler.rs"
+[[bin]]
+name = "rustpp-plugin"
+path = "src/bin/rustpp_plugin.rs"
+[[bin]]
+name = "rust-plugin"
+path = "src/bin/rust_plugin.rs"

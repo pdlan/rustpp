@@ -7,6 +7,7 @@ members = [
     "examples/ordinary_class_demo",
     "examples/http_server_demo",
     "examples/object_model_comparison",
+    "examples/lifecycle_comparison",
 ]
 resolver = "2"
 

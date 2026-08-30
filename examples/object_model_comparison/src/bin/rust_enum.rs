@@ -22,8 +22,7 @@ impl ToggleButton {
     }
 
     fn paint(&self) -> String {
-        let _id = self.id;
-        format!("[ {} ]", self.describe())
+        format!("[ #{} {} ]", self.id, self.describe())
     }
 
     fn click(&mut self) {
@@ -65,7 +64,7 @@ fn main() {
     let mut widget = Box::new(WidgetNode::ToggleButton(concrete));
 
     assert_eq!(widget.complete_address(), original_address);
-    assert_eq!(widget.paint(), "[ Dark mode: unchecked ]");
+    assert_eq!(widget.paint(), "[ #7 Dark mode: unchecked ]");
 
     // Every capability operation is an exhaustive variant match.
     let WidgetNode::ToggleButton(toggle) = &mut *widget else {

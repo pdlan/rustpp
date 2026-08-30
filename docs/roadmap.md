@@ -581,3 +581,18 @@ mismatch. Fixes belong in that layer rather than in output-string patches.
   independently discoverable capabilities.
 - All four binaries run successfully with identical output; workspace tests,
   warning-free Clippy, and AST freshness remain green.
+
+### 2026-08-30 — Real stable-placement lifecycle comparisons
+
+- Added paired Rust++ and idiomatic Rust binaries for four address-retaining
+  systems: reactor connection registration, native-window callback userdata,
+  intrusive scheduler membership, and multi-interface plugin publication.
+- Each Rust++ class publishes only from `init`, after generated final
+  placement, and unpublishes from `deinit`, before structural Drop. Window,
+  scheduler, and plugin examples also exercise multiple inheritance and
+  sibling cross-casts during their live epoch.
+- Equivalent Rust versions use `Pin<Box<T>>`, `PhantomPinned`, explicit
+  post-pin publication factories, pinned receiver signatures, audited unsafe
+  token initialization/projection, Drop cleanup, and per-interface query hooks.
+  Pairwise output diffs are empty for all four scenarios. All eight binaries
+  and the ordinary-class baseline pass pinned-nightly Miri.

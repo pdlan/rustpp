@@ -1,26 +1,19 @@
 class Widget {
     pub id: usize,
 
-    constructor(id: usize) {
-        new { id }
-        init {}
-    }
+    constructor(id: usize) { new { id } }
 
     pub virtual fn paint(&self) -> String {
         let id = self.id;
         format!("widget #{id}")
     }
 
-    destructor { deinit {} }
 }
 
 class Clickable {
     pub clicks: usize,
 
-    constructor() {
-        new { clicks: 0 }
-        init {}
-    }
+    constructor() { new { clicks: 0 } }
 
     pub virtual fn click(&mut self) {
         self.clicks += 1;
@@ -30,22 +23,17 @@ class Clickable {
         self.clicks
     }
 
-    destructor { deinit {} }
 }
 
 class Accessible {
     pub label: String,
 
-    constructor(label: String) {
-        new { label }
-        init {}
-    }
+    constructor(label: String) { new { label } }
 
     pub virtual fn describe(&self) -> String {
         self.label.clone()
     }
 
-    destructor { deinit {} }
 }
 
 class ToggleButton : public Widget, public Clickable, public Accessible {
@@ -58,12 +46,12 @@ class ToggleButton : public Widget, public Clickable, public Accessible {
             base Accessible(label),
             checked: false,
         }
-        init {}
     }
 
     pub override fn paint(&self) -> String {
+        let id = self.id;
         let description = self.describe();
-        format!("[ {description} ]")
+        format!("[ #{id} {description} ]")
     }
 
     pub override fn click(&mut self) {
@@ -81,7 +69,6 @@ class ToggleButton : public Widget, public Clickable, public Accessible {
         self.checked
     }
 
-    destructor { deinit {} }
 }
 
 fn main() {
@@ -93,7 +80,7 @@ fn main() {
     let mut widget: Box<Widget> = concrete;
     assert_eq!(widget.__rpp_complete_address(), original_address);
     assert!(widget is ToggleButton);
-    assert_eq!(widget.paint(), "[ Dark mode: unchecked ]");
+    assert_eq!(widget.paint(), "[ #7 Dark mode: unchecked ]");
 
     // Dynamic sibling cross-cast: Widget -> Clickable.
     {

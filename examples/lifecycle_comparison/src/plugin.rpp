@@ -1,0 +1,43 @@
+use std::sync::Arc;
+use std::sync::Mutex;
+
+class Plugin { constructor() { new {} } pub virtual fn name(&self) -> &'static str { "plugin" } }
+class RequestHandler { constructor() { new {} } pub virtual fn handle(&self) -> &'static str { "unhandled" } }
+class MetricsSource { constructor() { new {} } pub virtual fn metric(&self) -> usize { 0 } }
+
+class HttpPlugin : public Plugin, public RequestHandler, public MetricsSource {
+    published: Arc<Mutex<Vec<usize>>>,
+    token: Option<usize>,
+
+    constructor(input_registry: Arc<Mutex<Vec<usize>>>) {
+        new { base Plugin(), base RequestHandler(), base MetricsSource(),
+              published: input_registry, token: None }
+        init {
+            let address = self as *const _ as usize;
+            self.published.lock().unwrap().push(address);
+            self.token = Some(address);
+        }
+    }
+
+    pub override fn name(&self) -> &'static str { "http" }
+    pub override fn handle(&self) -> &'static str { "200 OK" }
+    pub override fn metric(&self) -> usize { 1 }
+
+    destructor {
+        deinit {
+            let address = self.token.take().unwrap();
+            self.published.lock().unwrap().retain(|item| *item != address);
+        }
+    }
+}
+
+fn main() {
+    let published = Arc::new(Mutex::new(Vec::new()));
+    let plugin: Box<Plugin> = construct Box<HttpPlugin>(published.clone());
+    assert_eq!(plugin.name(), "http");
+    assert_eq!((&*plugin as? RequestHandler).unwrap().handle(), "200 OK");
+    assert_eq!((&*plugin as? MetricsSource).unwrap().metric(), 1);
+    drop(plugin);
+    assert!(published.lock().unwrap().is_empty());
+    println!("plugin: published three views, queried, unpublished");
+}

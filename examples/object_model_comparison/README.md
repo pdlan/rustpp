@@ -4,7 +4,7 @@ Four binaries implement the same observable toggle-button scenario. Each
 prints:
 
 ```text
-[ Dark mode: checked ]
+[ #7 Dark mode: checked ]
 clicks=1, same_address=true
 ```
 

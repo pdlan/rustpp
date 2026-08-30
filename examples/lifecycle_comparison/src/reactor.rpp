@@ -1,0 +1,44 @@
+use std::sync::Arc;
+use std::sync::Mutex;
+
+abstract class EventHandler {
+    constructor() { new {} }
+    pub virtual fn on_ready(&mut self) -> usize;
+}
+
+class Connection : public EventHandler {
+    registry: Arc<Mutex<Vec<usize>>>,
+    registration: Option<usize>,
+    events: usize,
+
+    constructor(input_registry: Arc<Mutex<Vec<usize>>>) {
+        new { base EventHandler(), registry: input_registry, registration: None, events: 0 }
+        init {
+            let address = self as *const _ as usize;
+            self.registry.lock().unwrap().push(address);
+            self.registration = Some(address);
+        }
+    }
+
+    pub override fn on_ready(&mut self) -> usize {
+        self.events += 1;
+        self.events
+    }
+
+    destructor {
+        deinit {
+            let address = self.registration.take().unwrap();
+            self.registry.lock().unwrap().retain(|item| *item != address);
+        }
+    }
+}
+
+fn main() {
+    let registry = Arc::new(Mutex::new(Vec::new()));
+    let mut handler: Box<EventHandler> = construct Box<Connection>(registry.clone());
+    assert_eq!(registry.lock().unwrap().len(), 1);
+    assert_eq!(handler.on_ready(), 1);
+    drop(handler);
+    assert!(registry.lock().unwrap().is_empty());
+    println!("reactor: registered, dispatched, unregistered");
+}

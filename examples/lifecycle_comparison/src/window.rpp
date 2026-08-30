@@ -1,0 +1,52 @@
+use std::sync::Arc;
+use std::sync::Mutex;
+
+abstract class EventTarget {
+    constructor() { new {} }
+    pub virtual fn event_kind(&self) -> &'static str;
+}
+
+class Accessible {
+    pub label: String,
+    constructor(label: String) { new { label } }
+    pub virtual fn describe(&self) -> String { self.label.clone() }
+}
+
+class Window : public EventTarget, public Accessible {
+    native_callbacks: Arc<Mutex<Vec<usize>>>,
+    handle: Option<usize>,
+
+    constructor(input_label: String, input_callbacks: Arc<Mutex<Vec<usize>>>) {
+        new { base EventTarget(), base Accessible(input_label), native_callbacks: input_callbacks,
+              handle: None }
+        init {
+            let userdata = self as *const _ as usize;
+            self.native_callbacks.lock().unwrap().push(userdata);
+            self.handle = Some(userdata);
+        }
+    }
+
+    pub override fn event_kind(&self) -> &'static str { "window-event" }
+    pub override fn describe(&self) -> String {
+        let label = self.label.clone();
+        format!("native window: {label}")
+    }
+
+    destructor {
+        deinit {
+            let userdata = self.handle.take().unwrap();
+            self.native_callbacks.lock().unwrap().retain(|item| *item != userdata);
+        }
+    }
+}
+
+fn main() {
+    let callbacks = Arc::new(Mutex::new(Vec::new()));
+    let target: Box<EventTarget> = construct Box<Window>("Settings".to_owned(), callbacks.clone());
+    assert_eq!(target.event_kind(), "window-event");
+    let accessible = (&*target as? Accessible).unwrap();
+    assert_eq!(accessible.describe(), "native window: Settings");
+    drop(target);
+    assert!(callbacks.lock().unwrap().is_empty());
+    println!("window: callback installed, cross-cast, removed");
+}
